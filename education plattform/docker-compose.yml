@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    container_name: elearning_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Run SQL script automatically
+    networks:
+      - elearning_network
+    restart: always
+
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5051:80"
+    depends_on:
+      - db
+    networks:
+      - elearning_network
+    restart: always
+
+  backend:
+    build:
+      context: ./backend  # Assuming your backend is in a 'backend' folder
+    container_name: elearning_backend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production # or development
+      PORT: 3000
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      DB_HOST: db # Use the 'db' service name as the hostname
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - db
+    networks:
+      - elearning_network
+    restart: always
+
+
+  simulator:
+    build:
+      context: ./simulator  # Assuming your simulator is in a 'simulator' folder
+    container_name: elearning_simulator
+    environment:
+      API_URL: http://backend:3000/api  # Access backend via service name
+      CONFIG_FILE: config.yaml # Or wherever your config is
+    volumes:
+      - ./simulator:/app  # Mount the simulator directory for development
+    depends_on:
+      - backend
+    networks:
+      - elearning_network
+    restart: on-failure
+    command: ["/bin/sh", "-c", "sleep 60 && python3 main.py"] # Delay start
+    #Optional volume to pass user credentials
+    #volumes:
+    #  - ./user_credentials:/opt/app/user_credentials
+
+
+
+volumes:
+  postgres_data:
+
+networks:
+  elearning_network:
+    driver: bridge

@@ -1,0 +1,20 @@
+api_url: "http://localhost:3000/api"
+num_admins: 1
+num_instructors: 3
+num_students: 1
+num_courses_per_instructor: 1
+num_content_items_per_course: 1
+course_topics:
+  - "Web Development"
+  - "Data Science"
+  - "Machine Learning"
+content_types:
+  - "video"
+  - "pdf"
+  - "quiz"
+user_passwords:
+    admin : "admin123"
+    instructor : "instructor123"
+    student : "student123"
+min_delay: 10
+max_delay: 20
